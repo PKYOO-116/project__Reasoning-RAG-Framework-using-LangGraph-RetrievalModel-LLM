@@ -8,8 +8,6 @@ LLM Engine: Ollama
 Pipeline framwork: LangGraph + LangChain
 Environment: Python 3.12
 
-
-
 ------ Data Flow ------------------------------------------------------------------------------
                  ┌───────────────────────────────────────┐
                  │          LangGraph Pipeline           │
@@ -56,3 +54,18 @@ Back-end: LangServe / Server: AWS EC2??? (Too slow for Llama 3 to run. Should co
 
 What to do next:
 1. edit Profile: Add Education, Leadership & Community Involvement, Skills, Language and Culture, Contact Info, Hobbies
+-> Let's just build pipeline and re-run with updated profile.
+
+Reference:
+
+Retrieval Evaluation -
+BEIR-A_Heterogeneous_Benchmark_for_Zero-shot_Evaluation_of_Information_Retrieval_Models
+https://huggingface.co/spaces/mteb/leaderboard
+https://microsoft.github.io/msmarco/
+
+LLM Evaluation -
+https://www.confident-ai.com/blog/rag-evaluation-metrics-answer-relevancy-faithfulness-and-more
+deepeval-github: https://github.com/confident-ai/deepeval?tab=readme-ov-file
+https://platform.openai.com/docs/guides/evals/evaluating-model-performance-beta?api-mode=responses
+https://medium.com/@vishaalini70/evaluating-rag-responses-using-ragas-openai-eval-framework-f3952ee75778
+https://docs.cohere.com/page/retrieval-eval-pydantic-ai
