@@ -1,4 +1,5 @@
-*/Profile.docx
+*/*.docx
 /reasongraph
 /qdrant_storage
 /.deepeval
+/qdrant_custom.tar
