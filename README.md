@@ -11,7 +11,7 @@
 ----------------------------------------- Data Flow -------------------------------------------
 
 
-                            LangGraph RAG Pipeline
+                        < LangGraph RAG Pipeline >
 
                                     │
                                     ▼
