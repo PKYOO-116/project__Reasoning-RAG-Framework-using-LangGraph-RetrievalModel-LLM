@@ -1,5 +1,6 @@
 # Reasoning RAG Framework using LangGraph, Retrieval Model, and LLM
 
+**The project is still ongoing. Codes may changes and files can be added.** <br>
 Used open-source tools to build LangGraph RAG pipeline <br>
 
 ## Model / Framework / Database / Environment
@@ -33,31 +34,31 @@ Used open-source tools to build LangGraph RAG pipeline <br>
                                     ▼
                   ┌────────────────────────────────────┐
                   │           Qdrant Vector DB         │
-                  │      (Local Storage / Search)      │
-                  └────────────────────────────────────┘
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │        Retrieval Evaluator         │
-                  │    (nDCG, MRR, Query Rewrite)      │
+            ┌───► │      (Local Storage / Search)      │
+            │     └────────────────────────────────────┘
+Rewrite     │                       │
+Based on    │                       ▼
+Evaluation  │     ┌────────────────────────────────────┐
+            │     │        Retrieval Evaluator         │
+            └──── │    (nDCG, MRR, Query Rewrite)      │
                   └────────────────────────────────────┘
                                     │
                                     ▼
                   ┌────────────────────────────────────┐
                   │           LLM Generator            │
-                  │         (Llama3 via Ollama)        │
-                  └────────────────────────────────────┘
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │     Answer Evaluator (Tier 1)      │
-                  │     Faithfulness / Relevancy       │
-                  └────────────────────────────────────┘
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │     Answer Evaluator (Tier 2)      │
-                  │     Grammar / Fluency / Bias       │
+            ┌───► │         (Llama3 via Ollama)        │
+            │     └────────────────────────────────────┘
+            │                       │
+            │                       ▼
+            │     ┌────────────────────────────────────┐
+            │     │     Answer Evaluator (Tier 1)      │
+Rewrite     ├──── │     Faithfulness / Relevancy       │
+Based on    │     └────────────────────────────────────┘
+Evaluation  │                       │
+            │                       ▼
+            │     ┌────────────────────────────────────┐
+            │     │     Answer Evaluator (Tier 2)      │
+            └──── │     Grammar / Fluency / Bias       │
                   └────────────────────────────────────┘
                                     │
                                     ▼
