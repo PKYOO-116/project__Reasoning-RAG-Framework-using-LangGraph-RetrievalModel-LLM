@@ -13,58 +13,58 @@ Used open-source tools to build LangGraph RAG pipeline <br>
 **Pipeline framwork:** LangGraph + LangChain <br>
 **Environment:** Python 3.12 <br>
 
-## Data Flow -----------------------------------------------
+## Data Flow
 
 
-                        < LangGraph RAG Pipeline >
+                            < LangGraph RAG Pipeline >
 
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │            Ingest Node             │
-                  │       (Load & Chunk Documents)     │
-                  └────────────────────────────────────┘
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │           Embedding Node           │
-                  │        (Qwen3 + bge Dual Vec)      │
-                  └────────────────────────────────────┘
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │           Qdrant Vector DB         │
-            ┌───► │      (Local Storage / Search)      │
-            │     └────────────────────────────────────┘
-Rewrite     │                       │
-Based on    │                       ▼
-Evaluation  │     ┌────────────────────────────────────┐
-            │     │        Retrieval Evaluator         │
-            └──── │    (nDCG, MRR, Query Rewrite)      │
-                  └────────────────────────────────────┘
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │           LLM Generator            │
-            ┌───► │         (Llama3 via Ollama)        │
-            │     └────────────────────────────────────┘
-            │                       │
-            │                       ▼
-            │     ┌────────────────────────────────────┐
-            │     │     Answer Evaluator (Tier 1)      │
-Rewrite     ├──── │     Faithfulness / Relevancy       │
-Based on    │     └────────────────────────────────────┘
-Evaluation  │                       │
-            │                       ▼
-            │     ┌────────────────────────────────────┐
-            │     │     Answer Evaluator (Tier 2)      │
-            └──── │     Grammar / Fluency / Bias       │
-                  └────────────────────────────────────┘
-                                    │
-                                    ▼
-                  ┌────────────────────────────────────┐
-                  │        Final Verified Answer       │
-                  └────────────────────────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────┐
+                      │            Ingest Node             │
+                      │       (Load & Chunk Documents)     │
+                      └────────────────────────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────┐
+                      │           Embedding Node           │
+                      │        (Qwen3 + bge Dual Vec)      │
+                      └────────────────────────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────┐
+                      │           Qdrant Vector DB         │
+                      │      (Local Storage / Search)      │ ◄───┐
+                      └────────────────────────────────────┘     │
+                                        │                        │ Rewrite
+                                        ▼                        │ Based on
+                      ┌────────────────────────────────────┐     │ Evaluation
+                      │        Retrieval Evaluator         │     │
+                      │    (nDCG, MRR, Query Rewrite)      │ ────┘
+                      └────────────────────────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────┐
+                      │           LLM Generator            │
+                      │         (Llama3 via Ollama)        │ ◄───┐
+                      └────────────────────────────────────┘     │
+                                        │                        │ Rewrite
+                                        ▼                        │ Based on
+                      ┌────────────────────────────────────┐     │ Evaluation
+                      │     Answer Evaluator (Tier 1)      │     │
+                      │     Faithfulness / Relevancy       │ ────┤
+                      └────────────────────────────────────┘     │
+                                        │                        │
+                                        ▼                        │
+                      ┌────────────────────────────────────┐     │
+                      │     Answer Evaluator (Tier 2)      │     │
+                      │     Grammar / Fluency / Bias       │ ────┘
+                      └────────────────────────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────┐
+                      │        Final Verified Answer       │
+                      └────────────────────────────────────┘
                                                                     
 -----------------------------------------------------------------------------------------------
 
