@@ -1,4 +1,4 @@
-# Reasoning RAG Framework for Personal Web Integration using LangGraph
+# Reasoning RAG Framework using LangGraph, Retrieval Model, and LLM
 
 Used open-source tools to build LangGraph RAG pipeline <br>
 
