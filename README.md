@@ -15,59 +15,56 @@ Used open-source tools to build LangGraph RAG pipeline <br>
 
 ## Data Flow
 
+                        < LangGraph RAG Pipeline >
 
-                            < LangGraph RAG Pipeline >
-
+                                    │
+                                    ▼
+                  ┌────────────────────────────────────┐
+                  │            Ingest Node             │
+                  │       (Load & Chunk Documents)     │
+                  └────────────────────────────────────┘
+                                    │
+                                    ▼
+                  ┌────────────────────────────────────┐
+                  │           Embedding Node           │
+                  │        (Qwen3 + bge Dual Vec)      │
+                  └────────────────────────────────────┘
                                         │
                                         ▼
-                      ┌────────────────────────────────────┐
-                      │            Ingest Node             │
-                      │       (Load & Chunk Documents)     │
-                      └────────────────────────────────────┘
-                                        │
-                                        ▼
-                      ┌────────────────────────────────────┐
-                      │           Embedding Node           │
-                      │        (Qwen3 + bge Dual Vec)      │
-                      └────────────────────────────────────┘
-                                        │
-                                        ▼
-                      ┌────────────────────────────────────┐
-                      │           Qdrant Vector DB         │
-                      │      (Local Storage / Search)      │ ◄───┐
-                      └────────────────────────────────────┘     │
-                                        │                        │ Rewrite
-                                        ▼                        │ Based on
-                      ┌────────────────────────────────────┐     │ Evaluation
-                      │        Retrieval Evaluator         │     │
-                      │    (nDCG, MRR, Query Rewrite)      │ ────┘
-                      └────────────────────────────────────┘
-                                        │
-                                        ▼
-                      ┌────────────────────────────────────┐
-                      │           LLM Generator            │
-                      │         (Llama3 via Ollama)        │ ◄───┐
-                      └────────────────────────────────────┘     │
-                                        │                        │ Rewrite
-                                        ▼                        │ Based on
-                      ┌────────────────────────────────────┐     │ Evaluation
-                      │     Answer Evaluator (Tier 1)      │     │
-                      │     Faithfulness / Relevancy       │ ────┤
-                      └────────────────────────────────────┘     │
-                                        │                        │
-                                        ▼                        │
-                      ┌────────────────────────────────────┐     │
-                      │     Answer Evaluator (Tier 2)      │     │
-                      │     Grammar / Fluency / Bias       │ ────┘
-                      └────────────────────────────────────┘
-                                        │
-                                        ▼
-                      ┌────────────────────────────────────┐
-                      │        Final Verified Answer       │
-                      └────────────────────────────────────┘
+                  ┌────────────────────────────────────┐
+                  │           Qdrant Vector DB         │
+                  │      (Local Storage / Search)      │ ◄───┐
+                  └────────────────────────────────────┘     │
+                                    │                        │ Rewrites
+                                    ▼                        │ Based on
+                  ┌────────────────────────────────────┐     │ Evaluation
+                  │        Retrieval Evaluator         │     │ (Max 5)
+                  │    (nDCG, MRR, Query Rewrite)      │ ────┘
+                  └────────────────────────────────────┘
+                                    │
+                                    ▼
+                  ┌────────────────────────────────────┐
+                  │           LLM Generator            │
+                  │         (Llama3 via Ollama)        │ ◄───┐
+                  └────────────────────────────────────┘     │
+                                    │                        │ Rewrites
+                                    ▼                        │ Based on
+                  ┌────────────────────────────────────┐     │ Evaluation
+                  │     Answer Evaluator (Tier 1)      │     │ (Max 3)
+                  │     Faithfulness / Relevancy       │ ────┤
+                  └────────────────────────────────────┘     │
+                                    │                        │
+                                    ▼                        │
+                  ┌────────────────────────────────────┐     │
+                  │     Answer Evaluator (Tier 2)      │     │
+                  │     Grammar / Fluency / Bias       │ ────┘
+                  └────────────────────────────────────┘
+                                    │
+                                    ▼
+                  ┌────────────────────────────────────┐
+                  │        Final Verified Answer       │
+                  └────────────────────────────────────┘
                                                                     
------------------------------------------------------------------------------------------------
-
 ## File Structure
 
     project_root/
@@ -78,6 +75,73 @@ Used open-source tools to build LangGraph RAG pipeline <br>
         ├── resume.txt
         ├── projects.md
         └── usc_report.pdf
+
+## Evaluation
+### 1. Retrieval Evaluation
+#### Purpose -
+To measure how well the retriever (e.g., bge-m3) identifies contextually relevant information from the embedded document store (Qdrant).
+
+#### Metrics -
+| Metric | Description | Goal |
+| ------ | -------- | --------------- |
+| **nDCG@k** *(Normalized Discounted Cumulative Gain)* | Evaluates the quality of ranking — higher relevance near the top yields higher scores. | ≥ 0.6 |
+| **MRR** *(Mean Reciprocal Rank)* | Measures how early the first relevant result appears. | ≥ 0.5           |
+| **Cosine Similarity** | Determines embedding relevance between query and retrieved chunks. | ≥ 0.4 threshold |
+
+#### Decision Logic -
+- If nDCG ≥ 0.6 or MRR ≥ 0.5 → retrieval is accepted.
+- Otherwise → the query is semantically rewritten (using Llama3) and retrieval retries up to 5 times.
+
+OUTPUT EXAMPLE: <br>
+- nDCG@5: 0.921 | MRR: 0.833 <br>
+  → Retrieval ranking satisfactory. Proceeding to answer generation.
+<br><br><br>
+### 2. Answer Generation Evaluation (Using LLM - Llama3)
+#### Purpose -
+Answer evaluation is conducted in two tiers, balancing factual grounding with linguistic refinement.
+
+--------------------------------------------------------
+<br>
+
+***Tier 1 - Semantic Evaluation***
+#### Metrics -
+| Metric | Description | Threshold |
+| ------ | ----------- | --------- |
+| **Faithfulness** | Measures if the answer is grounded in the provided context (no hallucination). | ≥ 0.7 |
+| **Answer Relevancy** | Measures semantic alignment between the user query and the generated answer. | ≥ 0.7 |
+
+#### Decision Logic -
+- If both metrics ≥ threshold → proceed to Tier 2.
+- If either metric < threshold → perform semantic rewriting of the answer to re-align with evidence.
+<br>
+--------------------------------------------------------
+<br>
+
+***Tier 2 - Linguistic & Ethical Evaluation***
+#### Metrics -
+| Metric              | Goal                             | Pass Criteria |
+| ------------------- | --------------------------------------- | ------ |
+| **Grammar Quality** | Correct syntax and structure            | ≥ 0.75 |
+| **Fluency**         | Natural flow and readability            | ≥ 0.75 |
+| **Coherence**       | Logical consistency between sentences   | ≥ 0.75 |
+| **Conciseness**     | Avoid redundancy or verbosity           | ≥ 0.6  |
+| **Toxicity**        | Absence of offensive or unsafe phrasing | ≤ 0.2  |
+| **Bias**            | Neutral and non-discriminatory tone     | ≤ 0.3  |
+
+#### Decision Logic -
+- If all thresholds are met → final answer accepted.
+- Otherwise → linguistic rewriting is triggered, improving fluency or ethics without altering factual meaning.
+- Maximum retries: 3 linguistic rewrites
+<br><br><br>
+--------------------------------------------------------
+***Adaptive Rewrite Logic***
+| Stage     | Rewrite Type       | Trigger                         | Max Rewrites |
+| --------- | ------------------ | ------------------------------- | ---- |
+| Retrieval | Query Rewrite      | Low nDCG / MRR                  | 5 |
+| Tier 1    | Semantic Rewrite   | Low Faithfulness / Relevancy    | 5 |
+| Tier 2    | Linguistic Rewrite | Grammar / Fluency / Bias issues | 3 |
+
+
 
 ## Future Project Expansion
 1. **Front-end Integration:** Integrate an Interactive Chat Interface powered by the Reasoning-RAG pipeline for seamless real-time Q&A on the personal website.
